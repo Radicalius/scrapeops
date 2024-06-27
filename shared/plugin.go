@@ -1,4 +1,4 @@
-package scrapeops_plugin
+package shared
 
 import "encoding/json"
 

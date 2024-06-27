@@ -1,3 +1,3 @@
-module scrapeops_plugin
+module shared
 
 go 1.20

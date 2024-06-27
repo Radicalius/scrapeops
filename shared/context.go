@@ -1,4 +1,4 @@
-package scrapeops_plugin
+package shared
 
 type Context interface {
 	GetQueue() *Queue
