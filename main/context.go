@@ -6,10 +6,10 @@ import (
 
 type Context struct {
 	Queue    *Queue
-	Database *Database
+	Database *DatabaseCollection
 }
 
-func NewContext(q *Queue, db *Database) *Context {
+func NewContext(q *Queue, db *DatabaseCollection) *Context {
 	return &Context{
 		Queue:    q,
 		Database: db,

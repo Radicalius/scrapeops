@@ -1,6 +1,13 @@
+filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/Radicalius/scrapeops/shared v0.0.0-20240627042017-5cc6b9d526f8 h1:eLiuFowqXzkVl1FO79SomzvJNwW91kcjmf/Og9ZCOj0=
 github.com/Radicalius/scrapeops/shared v0.0.0-20240627042017-5cc6b9d526f8/go.mod h1:+7vGaRQkIfwBy+jFRwqKm5UXdROj0Xwae5LMpBnHtRU=
 github.com/Radicalius/scrapeops/shared v0.0.0-20240629154420-7bc9923a8e6a h1:T9O3Ezazg42J90ULyAgIk78TijpcSsCsbp7gvJLPlw8=
 github.com/Radicalius/scrapeops/shared v0.0.0-20240629154420-7bc9923a8e6a/go.mod h1:+7vGaRQkIfwBy+jFRwqKm5UXdROj0Xwae5LMpBnHtRU=
+github.com/Radicalius/scrapeops/shared v0.0.0-20240629173140-10e98d66c3fd h1:LBrXa2afujqcdjHowvN+bk50BHCLn35Equ5akfHJhyA=
+github.com/Radicalius/scrapeops/shared v0.0.0-20240629173140-10e98d66c3fd/go.mod h1:+7vGaRQkIfwBy+jFRwqKm5UXdROj0Xwae5LMpBnHtRU=
+github.com/go-sql-driver/mysql v1.8.1/go.mod h1:wEBSXgmK//2ZFJyE+qWnIsVGmvmEKlqwuVSjsCm7DZg=
+github.com/jmoiron/sqlx v1.4.0 h1:1PLqN7S1UYp5t4SrVVnt4nUVNemrDAtxlulVe+Qgm3o=
+github.com/jmoiron/sqlx v1.4.0/go.mod h1:ZrZ7UsYB/weZdl2Bxg6jCRO9c3YHl8r3ahlKmRT4JLY=
+github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
 github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
