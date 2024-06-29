@@ -7,6 +7,7 @@ import (
 	"os"
 	"plugin"
 	"strings"
+	"time"
 
 	scrapeops_plugin "github.com/Radicalius/scrapeops/shared"
 )
@@ -49,7 +50,10 @@ func main() {
 		}
 	}
 
-	q := Queue{}
+	q, err := InitQueue()
+	if err != nil {
+		log.Fatalf("Error initializing queue: %s", err.Error())
+	}
 
 	for {
 		for handlerName := range Handlers {
@@ -59,12 +63,12 @@ func main() {
 				continue
 			}
 
-			if messageBody == nil {
+			if messageBody == "" {
 				continue
 			}
 
 			go func() {
-				err := Handlers[handlerName](messageBody, nil)
+				err := Handlers[handlerName]([]byte(messageBody), nil)
 				if err != nil {
 					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s", handlerName, string(messageBody), err.Error())
 
@@ -76,5 +80,7 @@ func main() {
 				}
 			}()
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 }
