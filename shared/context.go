@@ -1,8 +1,8 @@
 package shared
 
 type Context interface {
-	GetQueue() *Queue
-	GetDatabase() *Database
+	GetQueue() Queue
+	GetDatabase() Database
 }
 
 type Queue interface {
