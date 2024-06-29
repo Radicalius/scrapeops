@@ -10,6 +10,6 @@ type Queue interface {
 }
 
 type Database interface {
-	Exec(sql string) error
-	Query(sql string, out *[]interface{}) error
+	Exec(dbName string, sql string) error
+	Query(dbName string, sql string, out *[]interface{}) error
 }
