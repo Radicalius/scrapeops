@@ -48,4 +48,33 @@ func main() {
 			}
 		}
 	}
+
+	q := Queue{}
+
+	for {
+		for handlerName := range Handlers {
+			messageId, messageBody, err := q.Peek(handlerName)
+			if err != nil {
+				fmt.Printf("Error peeking at queue for %s; %s", handlerName, err.Error())
+				continue
+			}
+
+			if messageBody == nil {
+				continue
+			}
+
+			go func() {
+				err := Handlers[handlerName](messageBody, nil)
+				if err != nil {
+					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s", handlerName, string(messageBody), err.Error())
+
+				}
+
+				err = q.Delete(messageId)
+				if err != nil {
+					fmt.Printf("Error deleting message: %s", err.Error())
+				}
+			}()
+		}
+	}
 }
