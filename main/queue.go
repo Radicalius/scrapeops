@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"os"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -13,7 +14,12 @@ type Queue struct {
 }
 
 func InitQueue() (*Queue, error) {
-	db, err := sql.Open("sqlite3", "./foo.db")
+	path := os.Getenv("SCRAPEOPS_QUEUE_PATH")
+	if path == "" {
+		path = "./queue.db"
+	}
+
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +65,7 @@ func (q *Queue) Peek(topic string) (int64, string, error) {
 	var id int64
 	var message string
 	if query.Next() {
-		query.Scan(&id)
-		query.Scan(&message)
+		query.Scan(&id, &message)
 	} else {
 		return 0, "", nil
 	}
@@ -76,6 +81,6 @@ func (q *Queue) Peek(topic string) (int64, string, error) {
 }
 
 func (q *Queue) Delete(messageId int64) error {
-	_, err := q.db.Exec("DELETE FROM messages WHERE messageId = ?", messageId)
+	_, err := q.db.Exec("DELETE FROM messages WHERE id = ?", messageId)
 	return err
 }

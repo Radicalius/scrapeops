@@ -55,6 +55,10 @@ func main() {
 		log.Fatalf("Error initializing queue: %s", err.Error())
 	}
 
+	db := &Database{}
+
+	context := NewContext(q, db)
+
 	for {
 		for handlerName := range Handlers {
 			messageId, messageBody, err := q.Peek(handlerName)
@@ -64,14 +68,15 @@ func main() {
 			}
 
 			if messageBody == "" {
+				fmt.Println("No messages found")
 				continue
 			}
 
 			go func() {
-				err := Handlers[handlerName]([]byte(messageBody), nil)
+				err := Handlers[handlerName]([]byte(messageBody), context)
 				if err != nil {
 					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s", handlerName, string(messageBody), err.Error())
-
+					return
 				}
 
 				err = q.Delete(messageId)
