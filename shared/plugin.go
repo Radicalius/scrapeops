@@ -28,7 +28,11 @@ func NewPluginConfiguration() *PluginConfiguration {
 }
 
 func RegisterHandler[T interface{}](pluginConfig *PluginConfiguration, name string, callback HandlerFunc[T]) {
-	pluginConfig.Handlers[name] = func(inp []byte, ctx Context) error {
+	pluginConfig.Handlers[name] = ToRawHandlerFunc(callback)
+}
+
+func ToRawHandlerFunc[T any](callback HandlerFunc[T]) func([]byte, Context) error {
+	return func(inp []byte, ctx Context) error {
 		var message T
 		err := json.Unmarshal(inp, &message)
 		if err != nil {

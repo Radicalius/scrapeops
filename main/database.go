@@ -28,7 +28,7 @@ func InitDatabase(dbName string, migrations []string) (*Database, error) {
 	for _, migration := range migrations {
 		_, err := db.Exec(migration)
 		if err != nil {
-			return nil, fmt.Errorf("Error applying migration: \n\tdatabase: %s\n\tstep: %s\n\terror: %s", dbName, err.Error())
+			return nil, fmt.Errorf("Error applying migration: \n\tdatabase: %s\n\tstep: %s\n\terror: %s", dbName, migration, err.Error())
 		}
 	}
 

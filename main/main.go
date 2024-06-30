@@ -78,6 +78,8 @@ func main() {
 		}
 	}
 
+	Handlers["httpAsync"] = scrapeops_plugin.ToRawHandlerFunc(HttpAsyncHandler)
+
 	crons.Start()
 
 	for {
@@ -92,10 +94,10 @@ func main() {
 				continue
 			}
 
-			go func() {
+			go func(handlerName string) {
 				err := Handlers[handlerName]([]byte(messageBody), context)
 				if err != nil {
-					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s", handlerName, string(messageBody), err.Error())
+					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s\n", handlerName, string(messageBody), err.Error())
 					return
 				}
 
@@ -103,7 +105,7 @@ func main() {
 				if err != nil {
 					fmt.Printf("Error deleting message: %s", err.Error())
 				}
-			}()
+			}(handlerName)
 		}
 
 		time.Sleep(1 * time.Second)
