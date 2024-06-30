@@ -10,6 +10,7 @@ import (
 	"time"
 
 	scrapeops_plugin "github.com/Radicalius/scrapeops/shared"
+	"github.com/robfig/cron"
 )
 
 var Handlers scrapeops_plugin.RawHandlerFuncMap = make(scrapeops_plugin.RawHandlerFuncMap)
@@ -24,6 +25,8 @@ func main() {
 	}
 
 	context := NewContext(q, db)
+
+	crons := cron.New()
 
 	pluginDir := os.Getenv("SCRAPEOPS_PLUGIN_DIRECTORY")
 	if pluginDir == "" {
@@ -43,49 +46,39 @@ func main() {
 				continue
 			}
 
-			handlerSym, err := p.Lookup("Handlers")
+			pluginSym, err := p.Lookup("PluginConfiguration")
 			if err != nil {
 				fmt.Printf("Error loading Handlers symbol in %s: %s", file.Name(), err.Error())
 				continue
 			}
 
-			handlers := handlerSym.(*scrapeops_plugin.RawHandlerFuncMap)
-			if handlers == nil {
+			plugin := pluginSym.(**scrapeops_plugin.PluginConfiguration)
+			if plugin == nil {
 				fmt.Printf("Encountered nil Handlers symbol in plugin %s", file.Name())
 			}
 
-			for key, f := range *handlers {
+			for key, f := range (*plugin).Handlers {
 				Handlers[key] = f
 			}
 
-			databaseNameSym, err := p.Lookup("DatabaseName")
-			if err != nil {
-				fmt.Printf("Error loading DatabaseName symbol in %s: %s", file.Name(), err.Error())
-				continue
+			if (*plugin).DatabaseConfiguration != nil {
+				err = db.AddDatabase((*plugin).DatabaseConfiguration.Name, (*plugin).DatabaseConfiguration.Migrations)
+				if err != nil {
+					fmt.Printf("Error loading database for plugin %s: %s", file.Name(), err.Error())
+				}
 			}
 
-			if databaseNameSym == nil {
-				continue
-			}
-
-			databaseMigrationsSym, err := p.Lookup("DatabaseMigrations")
-			if err != nil {
-				fmt.Printf("Error loading DatabaseMigrations symbol in %s: %s", file.Name(), err.Error())
-				continue
-			}
-
-			if databaseMigrationsSym == nil {
-				continue
-			}
-
-			databaseName := databaseNameSym.(*string)
-			databaseMigrations := databaseMigrationsSym.(*[]string)
-			err = db.AddDatabase(*databaseName, *databaseMigrations)
-			if err != nil {
-				fmt.Printf("Error loading database for plugin %s: %s", file.Name(), err.Error())
+			for cronExpr, jobLists := range (*plugin).CronJobs {
+				for _, job := range jobLists {
+					crons.AddFunc(cronExpr, func() {
+						job(context)
+					})
+				}
 			}
 		}
 	}
+
+	crons.Start()
 
 	for {
 		for handlerName := range Handlers {
@@ -96,7 +89,6 @@ func main() {
 			}
 
 			if messageBody == "" {
-				fmt.Println("No messages found")
 				continue
 			}
 

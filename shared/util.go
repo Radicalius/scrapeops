@@ -15,3 +15,11 @@ func Query[T any](ctx Context, dbName string, sql string, out *[]T, params ...an
 	
 	return nil
 }
+
+func Exec(ctx Context, dbName string, sql string) error {
+	return ctx.GetDatabase().Exec(dbName, sql)
+}
+
+func Emit[T any](ctx Context, queueName string, message T) error {
+	return ctx.GetQueue().Emit(queueName, message)
+}
