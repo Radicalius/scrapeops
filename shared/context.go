@@ -1,5 +1,7 @@
 package shared
 
+import "reflect"
+
 type Context interface {
 	GetQueue() Queue
 	GetDatabase() Database
@@ -10,6 +12,6 @@ type Queue interface {
 }
 
 type Database interface {
-	Exec(dbName string, sql string) error
-	Query(dbName string, sql string, out *[]interface{}) error
+	Exec(dbName string, sql string, params ...interface{}) error
+	Query(t reflect.Type, dbName string, sql string, out *[]interface{}, params ...interface{}) error
 }

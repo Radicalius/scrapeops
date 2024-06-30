@@ -38,27 +38,30 @@ func InitDatabase(dbName string, migrations []string) (*Database, error) {
 	}, nil
 }
 
-func (d *Database) Exec(sql string) error {
-	_, err := d.conn.Exec(sql)
+func (d *Database) Exec(sql string, params ...any) error {
+	_, err := d.conn.Exec(sql, params...)
 	return err
 }
 
-func (d *Database) Query(sql string, out *[]interface{}) error {
-	rows, err := d.conn.Queryx(sql)
+func (d *Database) Query(t reflect.Type, sql string, out *[]interface{}, params ...any) error {
+	rows, err := d.conn.Queryx(sql, params...)
 	if err != nil {
+		fmt.Println("in")
 		return err
 	}
+	defer rows.Close()
 
-	elemType := reflect.TypeOf(out).Elem()
 	for rows.Next() {
-		newElem := reflect.New(elemType).Interface()
-		err = rows.StructScan(newElem)
+		newElem := reflect.New(t).Elem()
+		err = rows.StructScan(&newElem)
 		if err != nil {
 			return err
 		}
 
 		*out = append(*out, newElem)
 	}
+
+	fmt.Println(len(*out))
 
 	return nil
 }
@@ -83,20 +86,20 @@ func (dbc *DatabaseCollection) AddDatabase(dbName string, migrations []string) e
 	return nil
 }
 
-func (dbc *DatabaseCollection) Exec(dbName string, sql string) error {
+func (dbc *DatabaseCollection) Exec(dbName string, sql string, params ...any) error {
 	db, exists := dbc.dbs[dbName]
 	if !exists {
 		return fmt.Errorf("Database %s does not exist", dbName)
 	}
 
-	return db.Exec(sql)
+	return db.Exec(sql, params...)
 }
 
-func (dbc *DatabaseCollection) Query(dbName string, sql string, out *[]interface{}) error {
+func (dbc *DatabaseCollection) Query(t reflect.Type, dbName string, sql string, out *[]interface{}, params ...any) error {
 	db, exists := dbc.dbs[dbName]
 	if !exists {
 		return fmt.Errorf("Database %s does not exist", dbName)
 	}
 
-	return db.Query(sql, out)
+	return db.Query(t, sql, out, params...)
 }
