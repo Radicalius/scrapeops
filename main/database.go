@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"reflect"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -43,27 +42,13 @@ func (d *Database) Exec(sql string, params ...any) error {
 	return err
 }
 
-func (d *Database) Query(t reflect.Type, sql string, out *[]interface{}, params ...any) error {
+func (d *Database) Query(sql string, params ...any) (*sqlx.Rows, error) {
 	rows, err := d.conn.Queryx(sql, params...)
 	if err != nil {
-		fmt.Println("in")
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		newElem := reflect.New(t).Elem()
-		err = rows.StructScan(&newElem)
-		if err != nil {
-			return err
-		}
-
-		*out = append(*out, newElem)
+		return nil, err
 	}
 
-	fmt.Println(len(*out))
-
-	return nil
+	return rows, nil
 }
 
 type DatabaseCollection struct {
@@ -95,11 +80,11 @@ func (dbc *DatabaseCollection) Exec(dbName string, sql string, params ...any) er
 	return db.Exec(sql, params...)
 }
 
-func (dbc *DatabaseCollection) Query(t reflect.Type, dbName string, sql string, out *[]interface{}, params ...any) error {
+func (dbc *DatabaseCollection) Query(dbName string, sql string, params ...any) (*sqlx.Rows, error) {
 	db, exists := dbc.dbs[dbName]
 	if !exists {
-		return fmt.Errorf("Database %s does not exist", dbName)
+		return nil, fmt.Errorf("Database %s does not exist", dbName)
 	}
 
-	return db.Query(t, sql, out, params...)
+	return db.Query(sql, params...)
 }

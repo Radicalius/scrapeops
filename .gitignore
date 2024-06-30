@@ -1,3 +1,4 @@
+plugins/
 scrapeops
 *.so
 *.db

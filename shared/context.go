@@ -1,6 +1,8 @@
 package shared
 
-import "reflect"
+import (
+	"github.com/jmoiron/sqlx"
+)
 
 type Context interface {
 	GetQueue() Queue
@@ -13,5 +15,5 @@ type Queue interface {
 
 type Database interface {
 	Exec(dbName string, sql string, params ...interface{}) error
-	Query(t reflect.Type, dbName string, sql string, out *[]interface{}, params ...interface{}) error
+	Query(dbName string, sql string, params ...interface{}) (*sqlx.Rows, error)
 }
