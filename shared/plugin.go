@@ -13,10 +13,15 @@ type DatabaseConfiguration struct {
 	Migrations []string
 }
 
+type ApiFunc[I any, O any] func(I, Context) (O, error)
+type RawApiFunc func([]byte, Context) (*[]byte, error)
+type RawApiFuncMap map[string]RawApiFunc
+
 type PluginConfiguration struct {
 	Handlers              RawHandlerFuncMap
 	DatabaseConfiguration *DatabaseConfiguration
 	CronJobs              map[string][]CronFunc
+	Apis                  RawApiFuncMap
 }
 
 func NewPluginConfiguration() *PluginConfiguration {
@@ -24,6 +29,7 @@ func NewPluginConfiguration() *PluginConfiguration {
 		Handlers:              make(RawHandlerFuncMap),
 		DatabaseConfiguration: nil,
 		CronJobs:              make(map[string][]CronFunc),
+		Apis:                  make(RawApiFuncMap),
 	}
 }
 
@@ -57,4 +63,26 @@ func RegisterCron(pluginConfig *PluginConfiguration, schedule string, callback C
 	}
 
 	pluginConfig.CronJobs[schedule] = append(pluginConfig.CronJobs[schedule], callback)
+}
+
+func RegisterApi[I any, O any](pluginConfig *PluginConfiguration, route string, callback ApiFunc[I, O]) {
+	pluginConfig.Apis[route] = func(b []byte, ctx Context) (*[]byte, error) {
+		var message I
+		err := json.Unmarshal(b, &message)
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := callback(message, ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		res, err := json.Marshal(out)
+		if err != nil {
+			return nil, err
+		}
+
+		return &res, nil
+	}
 }

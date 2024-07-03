@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"plugin"
 	"strings"
@@ -80,12 +81,17 @@ func main() {
 					})
 				}
 			}
+
+			for route, apiFunc := range (*plugin).Apis {
+				InitApi(route, apiFunc, context)
+			}
 		}
 	}
 
 	Handlers["httpAsync"] = scrapeops_plugin.ToRawHandlerFunc(HttpAsyncHandler)
 
 	crons.Start()
+	go http.ListenAndServe(":8080", nil)
 
 	for {
 		for handlerName := range Handlers {
