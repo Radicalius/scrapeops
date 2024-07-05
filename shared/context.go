@@ -7,6 +7,7 @@ import (
 type Context interface {
 	GetQueue() Queue
 	GetDatabase() Database
+	GetLogger() Logger
 }
 
 type Queue interface {
@@ -16,4 +17,11 @@ type Queue interface {
 type Database interface {
 	Exec(dbName string, sql string, params ...interface{}) error
 	Query(dbName string, sql string, params ...interface{}) (*sqlx.Rows, error)
+}
+
+type Logger interface {
+	Fatal(message string, params ...string)
+	Error(message string, params ...string)
+	Warn(message string, params ...string)
+	Info(message string, params ...string)
 }

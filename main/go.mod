@@ -1,6 +1,6 @@
 module scrapeops
 
-go 1.20
+go 1.22
 
 replace github.com/Radicalius/scrapeops/shared => ../shared
 

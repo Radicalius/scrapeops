@@ -13,28 +13,32 @@ type ErrorResponse struct {
 	Error string
 }
 
-func HandleError(route string, input string, err error, w http.ResponseWriter) {
+func HandleError(logger *Logger, err error, w http.ResponseWriter) {
 	data, _ := json.Marshal(ErrorResponse{
 		Error: err.Error(),
 	})
 
-	fmt.Printf("Error handling api call:\n\troute: %s\n\tinput: %s\n\terror: %s\n", route, input, err.Error())
+	logger.Error("Error handling api call", "error", err.Error())
 
 	w.WriteHeader(500)
 	w.Write(data)
 }
 
-func InitApi(route string, apiFunc sops.RawApiFunc, context sops.Context) {
+func InitApi(route string, apiFunc sops.RawApiFunc, context *Context, baseLogger *Logger) {
 	http.HandleFunc(fmt.Sprintf("/api/%s", route), func(w http.ResponseWriter, r *http.Request) {
+		logger := baseLogger.With("route", route)
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			HandleError(route, "", err, w)
+			HandleError(logger, err, w)
 			return
 		}
 
-		out, err := apiFunc(body, context)
+		logger = logger.With("messageBody", string(body))
+
+		out, err := apiFunc(body, context.WithLogger(logger))
 		if err != nil {
-			HandleError(route, string(body), err, w)
+			HandleError(logger, err, w)
 			return
 		}
 

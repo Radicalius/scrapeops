@@ -7,6 +7,7 @@ import (
 type Context struct {
 	Queue    *Queue
 	Database *DatabaseCollection
+	Logger   *Logger
 }
 
 func NewContext(q *Queue, db *DatabaseCollection) *Context {
@@ -22,4 +23,16 @@ func (c *Context) GetDatabase() scrapeops_plugin.Database {
 
 func (c *Context) GetQueue() scrapeops_plugin.Queue {
 	return c.Queue
+}
+
+func (c *Context) GetLogger() scrapeops_plugin.Logger {
+	return c.Logger
+}
+
+func (c *Context) WithLogger(logger *Logger) *Context {
+	return &Context{
+		Queue:    c.Queue,
+		Database: c.Database,
+		Logger:   logger,
+	}
 }

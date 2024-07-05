@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"plugin"
@@ -17,12 +16,13 @@ import (
 var Handlers scrapeops_plugin.RawHandlerFuncMap = make(scrapeops_plugin.RawHandlerFuncMap)
 
 func main() {
+	logger := NewLogger().With("environment", os.Getenv("SCRAPEOPS_ENVIRONMENT"))
 
 	db := NewDatabaseCollection()
 
 	q, err := InitQueue()
 	if err != nil {
-		log.Fatalf("Error initializing queue: %s", err.Error())
+		logger.Fatal("Error initializing queues", "error", err.Error())
 	}
 
 	context := NewContext(q, db)
@@ -36,26 +36,27 @@ func main() {
 
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
-		log.Fatalf("Error opening the directory %s: %s", pluginDir, err.Error())
+		logger.Fatal(fmt.Sprintf("Error opening the directory %s", pluginDir), "error", err.Error())
 	}
 
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".so") {
 			p, err := plugin.Open(pluginDir + "/" + file.Name())
 			if err != nil {
-				fmt.Printf("Error opening plugin %s: %s", file.Name(), err.Error())
+				logger.Error("Error opening plugin", "plugin", file.Name(), "error", err.Error())
 				continue
 			}
 
 			pluginSym, err := p.Lookup("PluginConfiguration")
 			if err != nil {
-				fmt.Printf("Error loading Handlers symbol in %s: %s", file.Name(), err.Error())
+				logger.Error("Error loading PluginConfiguration symbol", "plugin", file.Name(), "error", err.Error())
 				continue
 			}
 
 			plugin := pluginSym.(**scrapeops_plugin.PluginConfiguration)
 			if plugin == nil {
-				fmt.Printf("Encountered nil Handlers symbol in plugin %s", file.Name())
+				logger.Error("Encountered nil PluginConfiguration symbol", "plugin", file.Name())
+				continue
 			}
 
 			for key, f := range (*plugin).Handlers {
@@ -65,7 +66,8 @@ func main() {
 			if (*plugin).DatabaseConfiguration != nil {
 				err = db.AddDatabase((*plugin).DatabaseConfiguration.Name, (*plugin).DatabaseConfiguration.Migrations)
 				if err != nil {
-					fmt.Printf("Error loading database for plugin %s: %s", file.Name(), err.Error())
+					logger.Error("Error loading database", "plugin", file.Name(), "error", err.Error())
+					continue
 				}
 			}
 
@@ -83,7 +85,7 @@ func main() {
 			}
 
 			for route, apiFunc := range (*plugin).Apis {
-				InitApi(route, apiFunc, context)
+				InitApi(route, apiFunc, context, logger)
 			}
 		}
 	}
@@ -96,8 +98,9 @@ func main() {
 	for {
 		for handlerName := range Handlers {
 			messageId, messageBody, err := q.Peek(handlerName)
+			handlerLogger := logger.With("queue", handlerName)
 			if err != nil {
-				fmt.Printf("Error peeking at queue for %s; %s", handlerName, err.Error())
+				handlerLogger.Error("Error peeking at queue", "error", err.Error())
 				continue
 			}
 
@@ -105,18 +108,18 @@ func main() {
 				continue
 			}
 
-			go func(handlerName string) {
-				err := Handlers[handlerName]([]byte(messageBody), context)
+			go func(handlerName string, logger_ *Logger) {
+				err := Handlers[handlerName]([]byte(messageBody), context.WithLogger(logger_))
 				if err != nil {
-					fmt.Printf("Error processing message: \n\tqueue: %s\n\tmessage: %s\n\terror: %s\n", handlerName, string(messageBody), err.Error())
+					logger_.Error("Error processing message", "error", err.Error())
 					return
 				}
 
 				err = q.Delete(messageId)
 				if err != nil {
-					fmt.Printf("Error deleting message: %s", err.Error())
+					logger_.Error("Error deleting message", "error", err.Error())
 				}
-			}(handlerName)
+			}(handlerName, handlerLogger.With("queueMessage", messageBody))
 		}
 
 		time.Sleep(1 * time.Second)
