@@ -17,6 +17,8 @@ var Handlers scrapeops_plugin.RawHandlerFuncMap = make(scrapeops_plugin.RawHandl
 
 func main() {
 	logger := NewLogger().With("environment", os.Getenv("SCRAPEOPS_ENVIRONMENT"))
+	metrics := NewMetrics()
+	metrics.InitMetricsApis()
 
 	db := NewDatabaseCollection()
 
@@ -25,9 +27,15 @@ func main() {
 		logger.Fatal("Error initializing queues", "error", err.Error())
 	}
 
-	context := NewContext(q, db)
+	context := NewContext(q, db, metrics)
 
 	crons := cron.New()
+	crons.AddFunc("0 * * * *", func() {
+		err := metrics.Flush()
+		if err != nil {
+			logger.Error("Flushing metrics", "error", err.Error())
+		}
+	})
 
 	pluginDir := os.Getenv("SCRAPEOPS_PLUGIN_DIRECTORY")
 	if pluginDir == "" {
@@ -112,8 +120,11 @@ func main() {
 				err := Handlers[handlerName]([]byte(messageBody), context.WithLogger(logger_))
 				if err != nil {
 					logger_.Error("Error processing message", "error", err.Error())
+					metrics.IncrementCounter("processor_" + handlerName + "_errors")
 					return
 				}
+
+				metrics.IncrementCounter("processor_" + handlerName + "_successes")
 
 				err = q.Delete(messageId)
 				if err != nil {

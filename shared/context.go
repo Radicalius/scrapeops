@@ -8,6 +8,7 @@ type Context interface {
 	GetQueue() Queue
 	GetDatabase() Database
 	GetLogger() Logger
+	GetMetrics() Metrics
 }
 
 type Queue interface {
@@ -24,4 +25,9 @@ type Logger interface {
 	Error(message string, params ...string)
 	Warn(message string, params ...string)
 	Info(message string, params ...string)
+}
+
+type Metrics interface {
+	IncrementCounter(counterName string)
+	Observe(histName string, value float64)
 }
