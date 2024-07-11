@@ -16,7 +16,7 @@ import (
 var Handlers scrapeops_plugin.RawHandlerFuncMap = make(scrapeops_plugin.RawHandlerFuncMap)
 
 func main() {
-	logger := NewLogger().With("environment", os.Getenv("SCRAPEOPS_ENVIRONMENT"))
+	logger := NewLogger(InitLogCollector()).With("environment", os.Getenv("SCRAPEOPS_ENVIRONMENT"))
 	metrics := NewMetrics()
 	metrics.InitMetricsApis()
 

@@ -15,11 +15,6 @@ type Point struct {
 	Data      float64
 }
 
-type MetricResponse struct {
-	Timestamps []int64
-	Data       []float64
-}
-
 type Metrics struct {
 	Data     map[string][]Point
 	Counters map[string]float64
@@ -111,7 +106,7 @@ func appendToMapArray[T interface{}](ma *map[string][]T, key string, value T) {
 }
 
 func (m *Metrics) InitMetricsApis() {
-	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/grafana/metric", func(w http.ResponseWriter, r *http.Request) {
 		metricName := r.URL.Query().Get("name")
 		start := r.URL.Query().Get("start")
 		end := r.URL.Query().Get("end")
@@ -129,18 +124,13 @@ func (m *Metrics) InitMetricsApis() {
 
 		endTime, err := strconv.ParseInt(end, 10, 64)
 		if err != nil {
-			endTime = 10000000000
+			endTime = 100000000000000
 		}
 
-		res := MetricResponse{
-			Timestamps: make([]int64, 0),
-			Data:       make([]float64, 0),
-		}
-
+		res := make([]Point, 0)
 		for _, point := range metric {
-			if point.Timestamp > startTime && point.Timestamp < endTime {
-				res.Data = append(res.Data, point.Data)
-				res.Timestamps = append(res.Timestamps, point.Timestamp)
+			if point.Timestamp > startTime/1000 && point.Timestamp < endTime/1000 {
+				res = append(res, point)
 			}
 		}
 

@@ -25,7 +25,7 @@ func HandleError(logger *Logger, err error, w http.ResponseWriter) {
 }
 
 func InitApi(route string, apiFunc sops.RawApiFunc, context *Context, baseLogger *Logger) {
-	http.HandleFunc(fmt.Sprintf("/api/%s", route), func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(fmt.Sprintf("/api/custom/%s", route), func(w http.ResponseWriter, r *http.Request) {
 		logger := baseLogger.With("route", route)
 
 		body, err := io.ReadAll(r.Body)
