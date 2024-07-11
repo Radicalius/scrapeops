@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -47,6 +48,10 @@ func main() {
 		logger.Fatal(fmt.Sprintf("Error opening the directory %s", pluginDir), "error", err.Error())
 	}
 
+	handlerNames := make([]string, 0)
+	apiNames := make([]string, 0)
+	cronNames := make([]string, 0)
+
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".so") {
 			p, err := plugin.Open(pluginDir + "/" + file.Name())
@@ -69,6 +74,7 @@ func main() {
 
 			for key, f := range (*plugin).Handlers {
 				Handlers[key] = f
+				handlerNames = append(handlerNames, key)
 			}
 
 			if (*plugin).DatabaseConfiguration != nil {
@@ -85,6 +91,7 @@ func main() {
 					Handlers[handlerName] = scrapeops_plugin.RawHandlerFunc(func(data []byte, ctx scrapeops_plugin.Context) error {
 						return job(context)
 					})
+					cronNames = append(cronNames, handlerName)
 
 					crons.AddFunc(cronExpr, func() {
 						context.GetQueue().Emit(handlerName, "")
@@ -93,10 +100,47 @@ func main() {
 			}
 
 			for route, apiFunc := range (*plugin).Apis {
+				apiNames = append(apiNames, route)
 				InitApi(route, apiFunc, context, logger)
 			}
 		}
 	}
+
+	http.HandleFunc("/api/resources/handlers", func(w http.ResponseWriter, r *http.Request) {
+		data, err := json.Marshal(handlerNames)
+		if err != nil {
+			w.WriteHeader(500)
+			logger.Error("Error fetching handler names", "error", err.Error())
+			return
+		}
+
+		w.Header().Add("content-type", "application/json")
+		w.Write(data)
+	})
+
+	http.HandleFunc("/api/resources/apis", func(w http.ResponseWriter, r *http.Request) {
+		data, err := json.Marshal(apiNames)
+		if err != nil {
+			w.WriteHeader(500)
+			logger.Error("Error fetching handler names", "error", err.Error())
+			return
+		}
+
+		w.Header().Add("content-type", "application/json")
+		w.Write(data)
+	})
+
+	http.HandleFunc("/api/resources/crons", func(w http.ResponseWriter, r *http.Request) {
+		data, err := json.Marshal(cronNames)
+		if err != nil {
+			w.WriteHeader(500)
+			logger.Error("Error fetching handler names", "error", err.Error())
+			return
+		}
+
+		w.Header().Add("content-type", "application/json")
+		w.Write(data)
+	})
 
 	Handlers["httpAsync"] = scrapeops_plugin.ToRawHandlerFunc(HttpAsyncHandler)
 
