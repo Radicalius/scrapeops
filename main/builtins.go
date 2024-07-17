@@ -9,7 +9,7 @@ import (
 
 func HttpAsyncHandler(message shared.HttpAsyncMessage, ctx shared.Context) error {
 	res := shared.HttpAsyncResponse{
-		Results: make(map[string][]string),
+		Results: make([][]string, 0),
 	}
 
 	resp, err := http.Get(message.Url)
@@ -22,15 +22,15 @@ func HttpAsyncHandler(message shared.HttpAsyncMessage, ctx shared.Context) error
 		return err
 	}
 
-	for name, query := range message.Queries {
+	for _, query := range message.Queries {
 		selection := doc.Find(query.Selector)
-		res.Results[name] = selection.Map(func(i int, s *goquery.Selection) string {
+		res.Results = append(res.Results, selection.Map(func(i int, s *goquery.Selection) string {
 			if query.Attribute == "text" {
 				return s.Text()
 			} else {
 				return s.AttrOr(query.Attribute, "")
 			}
-		})
+		}))
 	}
 
 	return shared.Emit(ctx, message.Callback, res)

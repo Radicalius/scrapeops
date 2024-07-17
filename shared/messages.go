@@ -8,11 +8,11 @@ type Query_ struct {
 type HttpAsyncMessage struct {
 	Url      string
 	Callback string
-	Queries  map[string]Query_
+	Queries  []Query_
 }
 
 type HttpAsyncResponse struct {
-	Results map[string][]string
+	Results [][]string
 }
 
 type EmptyRequest struct{}
