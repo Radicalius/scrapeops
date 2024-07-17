@@ -85,18 +85,10 @@ func main() {
 				}
 			}
 
-			for cronExpr, jobLists := range (*plugin).CronJobs {
-				for i, job := range jobLists {
-					handlerName := fmt.Sprintf("cron%s-%d", cronExpr, i)
-					Handlers[handlerName] = scrapeops_plugin.RawHandlerFunc(func(data []byte, ctx scrapeops_plugin.Context) error {
-						return job(context)
-					})
-					cronNames = append(cronNames, handlerName)
-
-					crons.AddFunc(cronExpr, func() {
-						context.GetQueue().Emit(handlerName, "")
-					})
-				}
+			for _, cronConfig := range (*plugin).CronJobs {
+				crons.AddFunc(cronConfig.Schedule, func() {
+					context.GetQueue().Emit(cronConfig.QueueName, scrapeops_plugin.EmptyRequest{})
+				})
 			}
 
 			for route, apiFunc := range (*plugin).Apis {

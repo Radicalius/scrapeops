@@ -14,3 +14,5 @@ type HttpAsyncMessage struct {
 type HttpAsyncResponse struct {
 	Results map[string][]string
 }
+
+type EmptyRequest struct{}

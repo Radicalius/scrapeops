@@ -6,8 +6,6 @@ type RawHandlerFunc func([]byte, Context) error
 type HandlerFunc[T interface{}] func(T, Context) error
 type RawHandlerFuncMap map[string]RawHandlerFunc
 
-type CronFunc func(Context) error
-
 type DatabaseConfiguration struct {
 	Name       string
 	Migrations []string
@@ -17,10 +15,15 @@ type ApiFunc[I any, O any] func(I, Context) (O, error)
 type RawApiFunc func([]byte, Context) (*[]byte, error)
 type RawApiFuncMap map[string]RawApiFunc
 
+type CronConfig struct {
+	Schedule  string
+	QueueName string
+}
+
 type PluginConfiguration struct {
 	Handlers              RawHandlerFuncMap
 	DatabaseConfiguration *DatabaseConfiguration
-	CronJobs              map[string][]CronFunc
+	CronJobs              []CronConfig
 	Apis                  RawApiFuncMap
 }
 
@@ -28,7 +31,7 @@ func NewPluginConfiguration() *PluginConfiguration {
 	return &PluginConfiguration{
 		Handlers:              make(RawHandlerFuncMap),
 		DatabaseConfiguration: nil,
-		CronJobs:              make(map[string][]CronFunc),
+		CronJobs:              make([]CronConfig, 0),
 		Apis:                  make(RawApiFuncMap),
 	}
 }
@@ -56,13 +59,11 @@ func RegisterDatabase(pluginConfig *PluginConfiguration, name string, migrations
 	}
 }
 
-func RegisterCron(pluginConfig *PluginConfiguration, schedule string, callback CronFunc) {
-	_, exists := pluginConfig.CronJobs[schedule]
-	if !exists {
-		pluginConfig.CronJobs[schedule] = make([]CronFunc, 0)
-	}
-
-	pluginConfig.CronJobs[schedule] = append(pluginConfig.CronJobs[schedule], callback)
+func RegisterCron(pluginConfig *PluginConfiguration, schedule string, queueName string) {
+	pluginConfig.CronJobs = append(pluginConfig.CronJobs, CronConfig{
+		QueueName: queueName,
+		Schedule:  schedule,
+	})
 }
 
 func RegisterApi[I any, O any](pluginConfig *PluginConfiguration, route string, callback ApiFunc[I, O]) {
