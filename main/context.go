@@ -2,25 +2,26 @@ package main
 
 import (
 	scrapeops_plugin "github.com/Radicalius/scrapeops/shared"
+	"gorm.io/gorm"
 )
 
 type Context struct {
-	Queue    *Queue
-	Database *DatabaseCollection
-	Metrics  *Metrics
-	Logger   *Logger
+	Queue              *Queue
+	DatabaseCollection *DatabaseCollection
+	Metrics            *Metrics
+	Logger             *Logger
 }
 
 func NewContext(q *Queue, db *DatabaseCollection, m *Metrics) *Context {
 	return &Context{
-		Queue:    q,
-		Database: db,
-		Metrics:  m,
+		Queue:              q,
+		DatabaseCollection: db,
+		Metrics:            m,
 	}
 }
 
-func (c *Context) GetDatabase() scrapeops_plugin.Database {
-	return c.Database
+func (c *Context) GetDatabase(dbName string) *gorm.DB {
+	return c.DatabaseCollection.GetDatabase(dbName)
 }
 
 func (c *Context) GetQueue() scrapeops_plugin.Queue {
@@ -37,8 +38,8 @@ func (c *Context) GetMetrics() scrapeops_plugin.Metrics {
 
 func (c *Context) WithLogger(logger *Logger) *Context {
 	return &Context{
-		Queue:    c.Queue,
-		Database: c.Database,
-		Logger:   logger,
+		Queue:              c.Queue,
+		DatabaseCollection: c.DatabaseCollection,
+		Logger:             logger,
 	}
 }

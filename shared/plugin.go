@@ -7,8 +7,8 @@ type HandlerFunc[T interface{}] func(T, Context) error
 type RawHandlerFuncMap map[string]RawHandlerFunc
 
 type DatabaseConfiguration struct {
-	Name       string
-	Migrations []string
+	Name   string
+	Tables []interface{}
 }
 
 type ApiFunc[I any, O any] func(I, Context) (O, error)
@@ -26,6 +26,8 @@ type PluginConfiguration struct {
 	CronJobs              []CronConfig
 	Apis                  RawApiFuncMap
 }
+
+var DatabaseName string
 
 func NewPluginConfiguration() *PluginConfiguration {
 	return &PluginConfiguration{
@@ -52,10 +54,11 @@ func ToRawHandlerFunc[T any](callback HandlerFunc[T]) func([]byte, Context) erro
 	}
 }
 
-func RegisterDatabase(pluginConfig *PluginConfiguration, name string, migrations []string) {
+func RegisterDatabase(pluginConfig *PluginConfiguration, name string, tables ...interface{}) {
+	DatabaseName = name
 	pluginConfig.DatabaseConfiguration = &DatabaseConfiguration{
-		Name:       name,
-		Migrations: migrations,
+		Name:   name,
+		Tables: tables,
 	}
 }
 

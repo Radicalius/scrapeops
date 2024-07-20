@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-type Database struct {
-	conn *sqlx.DB
-}
-
-func InitDatabase(dbName string, migrations []string) (*Database, error) {
+func InitDatabase(dbName string, tables []interface{}) (*gorm.DB, error) {
 	path := os.Getenv("SCRAPEOPS_DATABASE_DIRECTORY")
 	if path == "" {
 		path = "./dbs"
@@ -20,49 +16,28 @@ func InitDatabase(dbName string, migrations []string) (*Database, error) {
 
 	filePath := fmt.Sprintf("%s/%s.db", path, dbName)
 
-	db, err := sqlx.Connect("sqlite3", filePath)
+	db, err := gorm.Open(sqlite.Open(filePath), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, migration := range migrations {
-		_, err := db.Exec(migration)
-		if err != nil {
-			return nil, fmt.Errorf("Error applying migration: \n\tdatabase: %s\n\tstep: %s\n\terror: %s", dbName, migration, err.Error())
-		}
-	}
+	db.AutoMigrate(tables...)
 
-	return &Database{
-		conn: db,
-	}, nil
-}
-
-func (d *Database) Exec(sql string, params ...any) error {
-	_, err := d.conn.Exec(sql, params...)
-	return err
-}
-
-func (d *Database) Query(sql string, params ...any) (*sqlx.Rows, error) {
-	rows, err := d.conn.Queryx(sql, params...)
-	if err != nil {
-		return nil, err
-	}
-
-	return rows, nil
+	return db, nil
 }
 
 type DatabaseCollection struct {
-	dbs map[string]*Database
+	dbs map[string]*gorm.DB
 }
 
 func NewDatabaseCollection() *DatabaseCollection {
 	return &DatabaseCollection{
-		dbs: make(map[string]*Database),
+		dbs: make(map[string]*gorm.DB),
 	}
 }
 
-func (dbc *DatabaseCollection) AddDatabase(dbName string, migrations []string) error {
-	db, err := InitDatabase(dbName, migrations)
+func (dbc *DatabaseCollection) AddDatabase(dbName string, tables []interface{}) error {
+	db, err := InitDatabase(dbName, tables)
 	if err != nil {
 		return err
 	}
@@ -71,20 +46,11 @@ func (dbc *DatabaseCollection) AddDatabase(dbName string, migrations []string) e
 	return nil
 }
 
-func (dbc *DatabaseCollection) Exec(dbName string, sql string, params ...any) error {
+func (dbc *DatabaseCollection) GetDatabase(dbName string) *gorm.DB {
 	db, exists := dbc.dbs[dbName]
 	if !exists {
-		return fmt.Errorf("Database %s does not exist", dbName)
+		return nil
 	}
 
-	return db.Exec(sql, params...)
-}
-
-func (dbc *DatabaseCollection) Query(dbName string, sql string, params ...any) (*sqlx.Rows, error) {
-	db, exists := dbc.dbs[dbName]
-	if !exists {
-		return nil, fmt.Errorf("Database %s does not exist", dbName)
-	}
-
-	return db.Query(sql, params...)
+	return db
 }

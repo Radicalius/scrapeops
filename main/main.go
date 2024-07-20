@@ -78,7 +78,7 @@ func main() {
 			}
 
 			if (*plugin).DatabaseConfiguration != nil {
-				err = db.AddDatabase((*plugin).DatabaseConfiguration.Name, (*plugin).DatabaseConfiguration.Migrations)
+				err = db.AddDatabase((*plugin).DatabaseConfiguration.Name, (*plugin).DatabaseConfiguration.Tables)
 				if err != nil {
 					logger.Error("Error loading database", "plugin", file.Name(), "error", err.Error())
 					continue

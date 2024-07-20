@@ -1,23 +1,16 @@
 package shared
 
-import (
-	"github.com/jmoiron/sqlx"
-)
+import "gorm.io/gorm"
 
 type Context interface {
 	GetQueue() Queue
-	GetDatabase() Database
+	GetDatabase(dbName string) *gorm.DB
 	GetLogger() Logger
 	GetMetrics() Metrics
 }
 
 type Queue interface {
 	Emit(funcName string, data interface{}) error
-}
-
-type Database interface {
-	Exec(dbName string, sql string, params ...interface{}) error
-	Query(dbName string, sql string, params ...interface{}) (*sqlx.Rows, error)
 }
 
 type Logger interface {
