@@ -6,11 +6,12 @@ func Emit[T any](ctx Context, queueName string, message T) error {
 	return ctx.GetQueue().Emit(queueName, message)
 }
 
-func EmitHttp(ctx Context, callback string, url string, params ...string) error {
+func EmitHttp(ctx Context, callback string, url string, joinKey string, params ...string) error {
 	req := HttpAsyncMessage{
 		Callback: callback,
 		Url:      url,
 		Queries:  make([]Query_, 0),
+		JoinKey:  joinKey,
 	}
 
 	for i := 0; i < len(params)/2; i++ {

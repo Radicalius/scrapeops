@@ -9,6 +9,7 @@ import (
 
 func HttpAsyncHandler(message shared.HttpAsyncMessage, ctx shared.Context) error {
 	res := shared.HttpAsyncResponse{
+		JoinKey: message.JoinKey,
 		Results: make([][]string, 0),
 	}
 
