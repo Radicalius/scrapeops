@@ -141,3 +141,5 @@ func copy(attrs *map[string]string, params ...string) {
 		(*attrs)[params[i*2]] = params[i*2+1]
 	}
 }
+
+var baseLogger = NewLogger(InitLogCollector())
