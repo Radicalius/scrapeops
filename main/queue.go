@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"os"
 	"time"
 
@@ -44,13 +43,8 @@ func InitQueue() (*Queue, error) {
 	return &queue, err
 }
 
-func (q *Queue) Emit(topic string, message interface{}) error {
-	data, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-
-	_, err = q.db.Exec("INSERT INTO messages (topic, message) VALUES (?, ?)", topic, data)
+func (q *Queue) Emit(topic string, message []byte) error {
+	_, err := q.db.Exec("INSERT INTO messages (topic, message) VALUES (?, ?)", topic, message)
 	return err
 }
 

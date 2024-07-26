@@ -2,3 +2,4 @@ plugins/
 scrapeops
 *.so
 *.db
+*.db-journal

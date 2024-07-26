@@ -1,7 +1,5 @@
 package shared
 
-type Item map[string]interface{}
-
 type Dom interface {
 	CssSelect(cssSelector string) Dom
 	CssSelectAll(cssSelector string) []Dom

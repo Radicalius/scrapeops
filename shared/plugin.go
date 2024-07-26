@@ -1,5 +1,7 @@
 package shared
 
+import "fmt"
+
 type CronConfiguration struct {
 	Schedule string
 	Item     Item
@@ -23,6 +25,7 @@ func (pc *PluginConfiguration) RegisterProvider(p Provider) {
 }
 
 func (pc *PluginConfiguration) RegisterCron(expr string, i Item) {
+	fmt.Println("in")
 	pc.CronConfigs = append(pc.CronConfigs, CronConfiguration{
 		Schedule: expr,
 		Item:     i,

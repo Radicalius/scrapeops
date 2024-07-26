@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"reflect"
 
 	"github.com/Radicalius/scrapeops/shared"
+	"github.com/robfig/cron"
 )
 
 func RunScheduler() {
@@ -12,6 +12,24 @@ func RunScheduler() {
 	if err != nil {
 		baseLogger.Fatal("Error initializing queues", "error", err.Error())
 	}
+
+	cron := cron.New()
+	for _, cronConfig := range Crons {
+		cron.AddFunc(cronConfig.Schedule, func() {
+			data, err := cronConfig.Item.Serialize()
+			if err != nil {
+				baseLogger.Fatal("Error serializing message", "error", err.Error())
+				return
+			}
+
+			err = q.Emit("main", data)
+			if err != nil {
+				baseLogger.Fatal("Error pushing message to queue from cron job", "error", err.Error())
+				return
+			}
+		})
+	}
+	cron.Start()
 
 	for {
 		id, message, err := q.Peek("main")
@@ -24,10 +42,10 @@ func RunScheduler() {
 			continue
 		}
 
-		var item shared.Item
-		err = json.Unmarshal([]byte(message), &item)
+		item, err := shared.DeserializeItem([]byte(message))
 		if err != nil {
 			baseLogger.Error("Error unmarshalling", "error", err.Error())
+			continue
 		}
 
 		errorReported := false
@@ -36,15 +54,15 @@ func RunScheduler() {
 				break
 			}
 
-			if provider.IsRelevant(&item) {
-				dom, err := HttpFetch(provider.GetUrl(&item))
+			if provider.IsRelevant(item) {
+				dom, err := HttpFetch(provider.GetUrl(item))
 				if err != nil {
-					baseLogger.Error("Error fetching page", "url", provider.GetUrl(&item), "error", err.Error())
+					baseLogger.Error("Error fetching page", "url", provider.GetUrl(item), "error", err.Error())
 					errorReported = true
 					continue
 				}
 
-				newItems, err := provider.Apply(dom, &item)
+				newItems, err := provider.Apply(dom, item)
 				if err != nil {
 					baseLogger.Error("Error applying provider", "message", message, "provider", reflect.TypeOf(provider).Name(), "error", err.Error())
 					errorReported = true
@@ -52,13 +70,18 @@ func RunScheduler() {
 				}
 
 				for _, newItem := range newItems {
-					err := q.Emit("main", newItem)
+					data, err := newItem.Serialize()
+					if err != nil {
+						baseLogger.Fatal("Error serializing message", "error", err.Error())
+						return
+					}
+
+					err = q.Emit("main", data)
 					if err != nil {
 						baseLogger.Error("Error emitting new item", "error", err.Error())
 						errorReported = true
 						continue
 					}
-
 				}
 			}
 		}
